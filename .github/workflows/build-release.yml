@@ -21,19 +21,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET 9.0.x
+      - name: Setup .NET 9.0.4
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x'   # version STS recommandée :contentReference[oaicite:1]{index=1}
+          dotnet-version: '9.0.4'
+
+      - name: Restore dependencies           # ← Nouvelle étape
+        run: dotnet restore                  # ← Exécute explicitement la restauration :contentReference[oaicite:3]{index=3}
 
       - name: Clean
         run: dotnet clean --configuration Release
 
-      - name: Restore dependencies
-        run: dotnet restore
-
       - name: Build (Release)
-        run: dotnet build --no-restore -c Release
+        run: dotnet build --no-restore -c Release   # plus besoin de restaurer ici :contentReference[oaicite:4]{index=4}
 
       - name: Publish self-contained
         run: |
@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nitrox-build
-          path: out/**      
+          path: out/**
 
   release:
     needs: build

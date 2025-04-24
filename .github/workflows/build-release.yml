@@ -3,8 +3,7 @@ name: Build and Release Nitrox
 on:
   push:
     branches: [ main, master ]
-    tags:
-      - 'v*'
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
 
@@ -19,7 +18,8 @@ jobs:
     runs-on: windows-latest
     env:
       DOTNET_SDK_VERSION: 9.0.x
-      GameDir: ${{ github.runner_temp }}/SubnauticaDummy    # Utilise github.runner_temp au lieu de runner.temp :contentReference[oaicite:0]{index=0}
+      # Utiliser un chemin Windows sans slash initial
+      GameDir: ${{ github.runner_temp }}\\SubnauticaDummy
 
     steps:
       - name: Checkout code
@@ -28,26 +28,28 @@ jobs:
       - name: Setup .NET ${{ env.DOTNET_SDK_VERSION }}
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '${{ env.DOTNET_SDK_VERSION }}'    # prend la dernière 9.0.* :contentReference[oaicite:1]{index=1}
+          dotnet-version: '${{ env.DOTNET_SDK_VERSION }}'
 
       - name: Restore dependencies
-        run: dotnet restore                           # restaure explicitement les paquets :contentReference[oaicite:2]{index=2}
+        run: dotnet restore
 
       - name: Clean
-        run: dotnet clean --configuration Release     # supprime les anciens binaires :contentReference[oaicite:3]{index=3}
+        run: dotnet clean --configuration Release
 
       - name: Create dummy GameDir
-        run: mkdir "${{ env.GameDir }}"               # évite l’erreur MSBuild de recherche de jeu :contentReference[oaicite:4]{index=4}
+        # PowerShell sur windows-latest
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "${{ env.GameDir }}" | Out-Null
 
       - name: Build (Release)
-        run: dotnet build --no-restore -c Release /p:GameDir="${{ env.GameDir }}"  
-                                                      # compile sans restaurer et avec GameDir :contentReference[oaicite:5]{index=5}
+        run: dotnet build --no-restore -c Release /p:GameDir="${{ env.GameDir }}"
 
       - name: Publish self-contained
         run: |
-          dotnet publish -c Release \
-            -r win-x64 \
-            --self-contained true \
+          dotnet publish -c Release `
+            -r win-x64 `
+            --self-contained true `
             -o out
 
       - name: Upload build artifacts

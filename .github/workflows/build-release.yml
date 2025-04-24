@@ -21,10 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET 9.0.4
+      - name: Setup .NET 9.0.x
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.4'   # version STS recommandée :contentReference[oaicite:1]{index=1}
+          dotnet-version: '9.0.x'   # version STS recommandée :contentReference[oaicite:1]{index=1}
 
       - name: Clean
         run: dotnet clean --configuration Release

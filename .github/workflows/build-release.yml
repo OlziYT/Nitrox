@@ -9,35 +9,46 @@ on:
     branches: [ main, master ]
 
 permissions:
-  contents: write        # nécessaire pour créer/modifier releases et artefacts
-  packages: write        # si vous publiez des packages
-  pull-requests: write   # pour interagir avec les PRs
-  issues: write          # si besoin de créer des issues  
+  contents: write
+  packages: write
+  pull-requests: write
+  issues: write
 
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      DOTNET_SDK_VERSION: 9.0.x
+      GameDir: ${{ runner.temp }}/SubnauticaDummy
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup .NET 9.0.x
+      - name: Setup .NET ${{ env.DOTNET_SDK_VERSION }}
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '${{ env.DOTNET_SDK_VERSION }}'    # prend la dernière 9.0.* :contentReference[oaicite:4]{index=4}
 
-      - name: Restore dependencies           # ← Nouvelle étape
-        run: dotnet restore                  # ← Exécute explicitement la restauration :contentReference[oaicite:3]{index=3}
+      - name: Restore dependencies
+        run: dotnet restore                           # restaure explicitement les paquets :contentReference[oaicite:5]{index=5}
 
       - name: Clean
-        run: dotnet clean --configuration Release
+        run: dotnet clean --configuration Release     # supprime les anciens binaires :contentReference[oaicite:6]{index=6}
+
+      - name: Create dummy GameDir
+        run: mkdir "${{ env.GameDir }}"               # évite l’erreur MSBuild de recherche de jeu :contentReference[oaicite:7]{index=7}
 
       - name: Build (Release)
-        run: dotnet build --no-restore -c Release   # plus besoin de restaurer ici :contentReference[oaicite:4]{index=4}
+        run: dotnet build --no-restore -c Release /p:GameDir="${{ env.GameDir }}"  
+                                                      # compile sans restaurer et avec GameDir :contentReference[oaicite:8]{index=8}
 
       - name: Publish self-contained
         run: |
-          dotnet publish -c Release -r win-x64 --self-contained true -o out
+          dotnet publish -c Release \
+            -r win-x64 \
+            --self-contained true \
+            -o out
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -51,12 +62,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup .NET 9.0.4
+      - name: Setup .NET ${{ env.DOTNET_SDK_VERSION }}
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.4'
+          dotnet-version: '${{ env.DOTNET_SDK_VERSION }}'
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -71,8 +83,6 @@ jobs:
           files: out/**
           generate_release_notes: true
           body: |
-            – **Build** : .NET SDK 9.0.4  
-            – **Date** : ${{ github.event.head_commit.timestamp }}  
-            – **Platform** : Windows x64
-
-      # L’action softprops/action-gh-release utilise automatiquement GITHUB_TOKEN
+            **Build** : .NET SDK ${{ env.DOTNET_SDK_VERSION }}  
+            **Date**  : ${{ github.event.head_commit.timestamp }}  
+            **Platform** : Windows x64

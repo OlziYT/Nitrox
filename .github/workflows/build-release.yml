@@ -24,24 +24,24 @@ jobs:
       - name: Setup .NET 9.0.x
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '9.0.x'    # Récupère toujours le dernier patch 9.0.* :contentReference[oaicite:2]{index=2}
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore         # Séparation explicitée de la restauration :contentReference[oaicite:3]{index=3}
 
       - name: Clean
-        run: dotnet clean --configuration Release
+        run: dotnet clean --configuration Release  # Nettoyage des binaires précédents :contentReference[oaicite:4]{index=4}
 
       - name: Create dummy GameDir and Build
         shell: pwsh
         run: |
-          # Définir un dossier temporaire pour GameDir
-          $gameDir = Join-Path $Env:GITHUB_RUN_ID 'SubnauticaDummy'
-          Write-Host "GameDir will be: $gameDir"
+          # 1. Construire un chemin absolu vers un dossier SubnauticaDummy dans le workspace
+          $gameDir = Join-Path $Env:GITHUB_WORKSPACE 'SubnauticaDummy'
+          Write-Host "Creating GameDir at $gameDir"
           New-Item -ItemType Directory -Path $gameDir -Force | Out-Null
 
-          # Build en lui passant GameDir au sein du même step
-          dotnet build --no-restore -c Release /p:GameDir="$gameDir"
+          # 2. Compiler en passant GameDir absolu
+          dotnet build --no-restore -c Release /p:GameDir="$gameDir"  # MSBuild trouve désormais le dossier :contentReference[oaicite:5]{index=5}
 
       - name: Publish self-contained
         run: |
@@ -83,6 +83,6 @@ jobs:
           files: out/**
           generate_release_notes: true
           body: |
-            **Build** : .NET SDK 9.0.x  
-            **Date**  : ${{ github.event.head_commit.timestamp }}  
+            **Build**    : .NET SDK 9.0.x  
+            **Date**     : ${{ github.event.head_commit.timestamp }}  
             **Platform** : Windows x64
